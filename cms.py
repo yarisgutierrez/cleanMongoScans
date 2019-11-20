@@ -34,7 +34,7 @@ if mongo_ssl_check == "y":
 # mongo_user = input("\nEnter MongoDB User: ")
 # mongo_password = getpass.getpass("\nEnter Password for %s: " % mongo_user)
 # mongo_db = input("\nEnter the database name: ")
-scan_name = input("\nEnter the name of the scan: ")
+scan_name = input("\nEnter Scan Profile Name: ")
 
 # Create the connection
 # TODO: Work with Morgan to understand how we connect to Mongo via SSL to
