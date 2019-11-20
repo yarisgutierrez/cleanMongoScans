@@ -83,7 +83,7 @@ try:
             print(scans["type"])
             print(tcolors.BOLD + "Created: " +
                   tcolors.ENDC, end="")
-            print(str(scans["created_at"])[:10])
+            print(scans["created_at"])
             if scans["state"] == "Completed":
                 if scans["scan_progress_status"]["Completed"]:
                     print(tcolors.BOLD + "Completed: " +
