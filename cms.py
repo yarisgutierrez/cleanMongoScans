@@ -34,7 +34,6 @@ if mongo_ssl_check == "y":
 # mongo_user = input("\nEnter MongoDB User: ")
 # mongo_password = getpass.getpass("\nEnter Password for %s: " % mongo_user)
 # mongo_db = input("\nEnter the database name: ")
-scan_name = input("\nEnter Scan Profile Name: ")
 
 # Create the connection
 # TODO: Work with Morgan to understand how we connect to Mongo via SSL to
@@ -53,8 +52,11 @@ else:
                          authSource="admin")
 
 db = client["bigid-server"]
-scans_collection = db["scans"]
 
+# Define the collection and search parameters
+scans_collection = db["scans"]
+scan_name = input("\nEnter Scan Profile Name: ")
+scan_date = input("\nEnter date of scan (e.g. 2019-12-31): ")
 
 # Only print certain values from the returned dictionary in order to
 # make the output more legible. Additional keys can be added if needed
@@ -62,42 +64,57 @@ scans_collection = db["scans"]
 # Example of some keys that may be useful: info, origin,
 # pii_summary_completed_dt, identities_scanned, etc.
 counter = 0
+try:
+    for scans in scans_collection.find({"name": scan_name}):
+        if str(scans["created_at"])[:10] == scan_date:
+            counter += 1
+            print("\n" + tcolors.BOLD + str(counter) + ") "
+                  + tcolors.ENDC, end="")
+            print(tcolors.GREEN + tcolors.BOLD + scans["name"] +
+                  tcolors.ENDC)
+            print(tcolors.WARNING + tcolors.BOLD + "_id: "
+                  + tcolors.ENDC, end="")
+            print(scans["_id"])
+            print(tcolors.BOLD + "State: " +
+                  tcolors.ENDC, end="")
+            print(scans["state"])
+            print(tcolors.BOLD + "Type of Scan: " +
+                  tcolors.ENDC, end="")
+            print(scans["type"])
+            print(tcolors.BOLD + "Created: " +
+                  tcolors.ENDC, end="")
+            print(str(scans["created_at"])[:10])
+            if scans["state"] == "Completed":
+                if scans["scan_progress_status"]["Completed"]:
+                    print(tcolors.BOLD + "Completed: " +
+                          tcolors.ENDC, end="")
+                    print(scans["scan_progress_status"]["Completed"])
+            print("\n")
+        elif len(scan_date) == 0:
+            raise ValueError
+except ValueError:
+    print("\nA scan date is required!\n")
 
-for scans in scans_collection.find({"name": scan_name}):
-    counter += 1
-    print("\n" + tcolors.BOLD + str(counter) + ") " + tcolors.ENDC, end="")
-    print(tcolors.GREEN + tcolors.BOLD + scans["name"] + tcolors.ENDC)
-    print(tcolors.WARNING + tcolors.BOLD + "_id: " + tcolors.ENDC, end="")
-    print(scans["_id"])
-    print(tcolors.BOLD + "State: " + tcolors.ENDC, end="")
-    print(scans["state"])
-    print(tcolors.BOLD + "Type of Scan: " + tcolors.ENDC, end="")
-    print(scans["type"])
-    print(tcolors.BOLD + "Created: " + tcolors.ENDC, end="")
-    print(scans["created_at"])
-    if scans["state"] == "Completed":
-        if scans["scan_progress_status"]["Completed"]:
-            print(tcolors.BOLD + "Completed: " + tcolors.ENDC, end="")
-            print(scans["scan_progress_status"]["Completed"])
-    print("\n")
+if scan_date:
+    auth_rem = input("Would you like to remove a scan (y/n)? ").lower()
+    if auth_rem == "y":
+        prim_id = input("Enter the _id of the scan to remove: ")
+        print(tcolors.WARNING + "\nWARNING: THIS ACTION CANNOT BE UNDONE!!" +
+              tcolors.ENDC)
+        confirm = input("Are you sure you want to remove scan _id %s (y/n)? "
+                        % prim_id).lower()
+        if confirm == "y":
+            # Delete Primary Scan
+            for ids in scans_collection.find({"_id": ObjectId(prim_id)}):
+                scans_collection.delete_many({"_id": ObjectId(prim_id)})
 
-auth_rem = input("Would you like to remove a scan (y/n)? ").lower()
-if auth_rem == "y":
-    prim_id = input("Enter the _id of the scan to remove: ")
-    print(tcolors.WARNING + "\nWARNING: THIS ACTION IS IRREVERSIBLE!" +
-          tcolors.ENDC)
-    confirm = input("Are you sure you want to remove scan _id %s (y/n)? "\
-                    % prim_id).lower()
-    if confirm == "y":
-        # Delete Primary Scan
-        for ids in scans_collection.find({"_id": ObjectId(prim_id)}):
-            scans_collection.delete_many({"_id": ObjectId(prim_id)})
-
-        # Delete sub-scans for above Primary Scan
-        for ids in scans_collection.find({"parent_scan_id": prim_id}):
-            scans_collection.delete_many({"parent_scan_id": prim_id})
-    elif confirm == "n":
+            # Delete sub-scans for above Primary Scan
+            for ids in scans_collection.find({"parent_scan_id": prim_id}):
+                scans_collection.delete_many({"parent_scan_id": prim_id})
+        elif confirm == "n":
+            sys.exit()
+    elif auth_rem == "n":
+        print("\nExiting.\n")
         sys.exit()
-elif auth_rem == "n":
-    print("\nExiting.")
+else:
     sys.exit()
