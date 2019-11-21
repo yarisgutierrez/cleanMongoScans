@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
 import sys
 import getpass
-from cryptography.fernet import Fernet
+
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
@@ -24,37 +23,36 @@ class tcolors:
 
 
 def main():
-    # MONGO
-    # SSL checks
-    mongo_ssl_check = input("\nIs MongoDB using SSL (y/n)? ").lower()
-
+    # Check if SSL is being used with Mongo
+    mongo_ssl_check = input("\nIs Mongodb using SSL (y/n)? ").lower()
     if mongo_ssl_check == "y":
-        ssl_cert = input("\nSpecify path to CA file (e.g. /path/to/ca.pem): ")
+        ssl_cert = input("\nPath to CA file (e.g. /path/to/ca.pem): ")
+        ssl_pem_key = input("\nPath to PEM Key (e.g. /path/to/server.pem): ")
 
     # Connection Details
-    mongo_server = input("\nEnter MongoDB Server Address: ")
-    mongo_user = input("\nEnter MongoDB User: ")
-    mongo_password = getpass.getpass("\nEnter Password for user '%s': "
-                                    % mongo_user)
+    mongo_server = input("\nEnter Mongodb Server Address: ")
+    mongo_user = input("\nEnter Mongodb User: ")
+    mongo_pass = getpass.getpass("\nEnter Password for user '%s': "
+                                 % mongo_user)
     mongo_db = input("\nEnter the database name: ")
 
     # Create the connection
-    # TODO: Work with Morgan to understand how we connect to Mongo via SSL to
-    # ensure we are passing the correct paramaters in the logic
     if mongo_ssl_check == "y":
         client = MongoClient(mongo_server,
                              username=mongo_user,
-                             password=mongo_password,
+                             password=mongo_pass,
                              ssl=True,
                              ssl_ca_certs=ssl_cert,
+                             ssl_keyfile=ssl_pem_key,
                              authSource="admin")
     else:
         client = MongoClient(mongo_server,
                              username=mongo_user,
-                             password=mongo_password,
+                             password=mongo_pass,
                              authSource="admin")
+    db = client[mongo_db]
 
-    # Test to make sure we can mov
+    # Test the connection and confirm successful authentication
     try:
         if client.server_info():
             print(tcolors.GREEN + "\nAuthentication successul!" + tcolors.ENDC)
@@ -64,11 +62,8 @@ def main():
         print("\nError: Could not connect to Mongo!\n")
         sys.exit()
 
-    db = client[mongo_db]
-
     # Define the collection and search parameters
     scans_collection = db["scans"]
-
     while True:
         scan_name = input("\nEnter Scan Profile Name: ")
         if len(scan_name) == 0:
@@ -76,12 +71,11 @@ def main():
             pass
         else:
             break
-
     scan_date = input("\nEnter date of scan (e.g. 2019-12-31): ")
 
     # Only print certain values from the returned dictionary in order to
     # make the output more legible. Additional keys can be added if needed
-    # to expand on the details show.
+    # to expand on the details shown.
     # Example of some keys that may be useful: info, origin,
     # pii_summary_completed_dt, identities_scanned, etc.
     counter = 0
@@ -122,8 +116,8 @@ def main():
             prim_id = input("Enter the _id of the scan to remove: ")
             print(tcolors.WARNING + "\nWARNING: THIS ACTION CANNOT BE UNDONE"
                   + tcolors.ENDC)
-            confirm = input("\nAre you sure you want to remove scan _id %s (y/n)? "
-                            % prim_id).lower()
+            confirm = input("\nAre you sure you want to remove "
+                            "scan _id %s (y/n)? " % prim_id).lower()
             if confirm == "y":
                 # Delete Primary Scan
                 for ids in scans_collection.find({"_id": ObjectId(prim_id)}):
@@ -145,5 +139,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("Quitting!\n")
+        print("\n\nQuitting!\n")
         sys.exit()
