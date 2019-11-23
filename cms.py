@@ -27,7 +27,7 @@ def main():
     mongo_ssl_check = input("\nIs Mongodb using SSL (y/n)? ").lower()
     if mongo_ssl_check == "y":
         ssl_cert = input("\nPath to CA file (e.g. /path/to/ca.pem): ")
-        ssl_pem_key = input("\nPath to PEM Key (e.g. /path/to/server.pem): ")
+        # ssl_pem_key = input("\nPath to PEM Key (e.g. /path/to/server.pem): ")
 
     # Connection Details
     mongo_server = input("\nEnter Mongodb Server Address: ")
@@ -43,7 +43,7 @@ def main():
                              password=mongo_pass,
                              ssl=True,
                              ssl_ca_certs=ssl_cert,
-                             ssl_keyfile=ssl_pem_key,
+                             # ssl_keyfile=ssl_pem_key,
                              authSource="admin")
     else:
         client = MongoClient(mongo_server,
