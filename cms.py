@@ -1,6 +1,8 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
 import getpass
+import ssl
 
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -26,8 +28,10 @@ def main():
     # Check if SSL is being used with Mongo
     mongo_ssl_check = input("\nIs Mongodb using SSL (y/n)? ").lower()
     if mongo_ssl_check == "y":
-        ssl_cert = input("\nPath to CA file (e.g. /path/to/ca.pem): ")
-        # ssl_pem_key = input("\nPath to PEM Key (e.g. /path/to/server.pem): ")
+        ssl_ca = input("\nPath to CA Certificate (e.g. /path/to/ca.pem: ")
+        ssl_cert = input("\nPath to Client Certificate "
+                         "(e.g. /path/to/client.pem): ")
+        ssl_key = input("\nPath to key (e.g. /path/to/client.key): ")
 
     # Connection Details
     mongo_server = input("\nEnter Mongodb Server Address: ")
@@ -42,8 +46,9 @@ def main():
                              username=mongo_user,
                              password=mongo_pass,
                              ssl=True,
-                             ssl_ca_certs=ssl_cert,
-                             # ssl_keyfile=ssl_pem_key,
+                             ssl_ca_certs=ssl_ca,
+                             ssl_certfile=ssl_cert,
+                             ssl_keyfile=ssl_key,
                              authSource="admin")
     else:
         client = MongoClient(mongo_server,
