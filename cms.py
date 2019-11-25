@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 The current iteration of this script will allow users to list Scans
@@ -41,7 +41,7 @@ class tcolors:
     WARNING = "\033[93m"
     FAIL = "\033[91m"
     ENDC = "\033[0m"
-    BOLD = "\033[1m"
+    boLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
 
