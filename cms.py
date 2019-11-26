@@ -16,8 +16,11 @@ Usage:
     ./cms.py
 """
 import sys
+import os.path
 import getpass
 
+from pymongo.errors import OperationFailure
+from pymongo.errors import ServerSelectionTimeoutError
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
@@ -41,7 +44,7 @@ class tcolors:
     WARNING = "\033[93m"
     FAIL = "\033[91m"
     ENDC = "\033[0m"
-    boLD = "\033[1m"
+    BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
 
@@ -58,8 +61,19 @@ def mongoConn():
     return mongo_server, mongo_user, mongo_pass, mongo_db
 
 
+def certVerify(cert_name):
+    """Verify the certificate path provided exists"""
+    try:
+        f = open(cert_name)
+        print(tcolors.GREEN + "\n" + cert_name + " found!\n" + tcolors.ENDC)
+        f.close
+    except FileNotFoundError:
+        print("\n" + cert_name + " not found! Please check your path.\n")
+        sys.exit()
+
+
 def main():
-    # TODO: Consolidate and split code into mode legible and reusable
+    # TODO: Consolidate and split code into more legible and reusable
     # functions. Add menu for "friendlier" interface
 
     mongo_server, mongo_user, mongo_pass, mongo_db = mongoConn()
@@ -72,11 +86,13 @@ def main():
         mongo_client_cert = input("Are you using Client Certificates "
                                   "(y/n): ").lower()
         if mongo_ssl_check and mongo_client_cert == "y":
-            ssl_ca = input("Path to CA Certificate (e.g. /path/to/ca.pem: ")
+            ssl_ca = input("Path to CA Certificate (e.g. /path/to/ca.pem): ")
+            certVerify(ssl_ca)
             ssl_cert = input("Path to Client Certificate "
                              "(e.g. /path/to/client.pem): ")
+            certVerify(ssl_cert)
             ssl_key = input("Path to key (e.g. /path/to/client.key): ")
-            print(mongo_server, mongo_user, mongo_pass, mongo_db)
+            certVerify(ssl_key)
             client = MongoClient(mongo_server,
                                  username=mongo_user,
                                  password=mongo_pass,
@@ -102,17 +118,27 @@ def main():
                              password=mongo_pass,
                              authSource="admin")
 
-    # Create the connection to the user-defined Mongo DB
-    db = client[mongo_db]
-
     # Test the connection and confirm successful authentication
     try:
         if client.server_info():
-            print(tcolors.GREEN + "\nAuthentication successul!" + tcolors.ENDC)
-        else:
-            raise Exception
-    except Exception:
-        print("\nError: Could not connect to Mongo!\n")
+            print(tcolors.GREEN + "*** Authentication to Mongo Successul! ***"
+                  + tcolors.ENDC)
+    except OperationFailure:
+        print("Authentication failed\n")
+        sys.exit()
+    except ServerSelectionTimeoutError:
+        print("Timeout Error. Connection closed.")
+        sys.exit()
+
+    # Create the connection to the user-defined Mongo DB and quit if
+    # database is not found
+    print(tcolors.BOLD + "Trying to connect to '" + mongo_db + "'...")
+    dbcheck = client.list_database_names()
+    if mongo_db in dbcheck:
+        print("Successfully connected to '" + mongo_db + "'.\n")
+        db = client[mongo_db]
+    else:
+        print("Database '" + mongo_db + "' not found!\n")
         sys.exit()
 
     # Define the collection and search parameters
@@ -131,7 +157,6 @@ def main():
     # to expand on the details shown.
     # Example of some keys that may be useful: info, origin,
     # pii_summary_completed_dt, identities_scanned, etc.
-    # Example of h
     counter = 0
     try:
         for scans in scans_collection.find({"name": scan_name}):
@@ -167,7 +192,11 @@ def main():
     if scan_date:
         auth_rem = input("Would you like to remove a scan (y/n)? ").lower()
         if auth_rem == "y":
-            prim_id = input("Enter the _id of the scan to remove: ")
+            while auth_rem == "y":
+                prim_id = input("Enter the _id of the scan to remove: ")
+                if len(prim_id) == 0:
+                    print("id cannot be blank!")
+                pass
             print(tcolors.WARNING + "\nWARNING: THIS ACTION CANNOT BE UNDONE"
                   + tcolors.ENDC)
             confirm = input("\nAre you sure you want to remove "
@@ -181,6 +210,8 @@ def main():
                 # artifacts from the primary scan collection
                 for ids in scans_collection.find({"parent_scan_id": prim_id}):
                     scans_collection.delete_many({"parent_scan_id": prim_id})
+
+                print("\n" + prim_id + " has been removed from the system")
             elif confirm == "n":
                 sys.exit()
         elif auth_rem == "n":
