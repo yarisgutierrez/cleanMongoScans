@@ -16,7 +16,6 @@ Usage:
     ./cms.py
 """
 import sys
-import os.path
 import getpass
 
 from pymongo.errors import OperationFailure
@@ -27,17 +26,16 @@ from bson.objectid import ObjectId
 __author__ = "Yaris Gutierrez"
 __copyright__ = "Copyright 2019, BigID"
 __email__ = "yarisg@bigid.com"
-__license__ = "MIT"
 __version__ = "0.1"
 
 # TODO: Add the ability to rename scans. Example: In-Progress => Complete, and
 # ensure that the script can be executed without the need to install Python
 # and other dependencies.
-# Work on better error-handling logic
 
 
 class tcolors:
-    """Define some colors to not make outputs look bland."""
+    """Define some colors to not make outputs look bland.
+    """
     HEADER = "\033[95m"
     BLUE = "\033[94m"
     GREEN = "\033[92m"
@@ -49,23 +47,32 @@ class tcolors:
 
 
 def mongoConn():
-    """Define the Mongo connection details"""
+    """Define the Mongo connection details
+    The mongo_server variable can hold a port number if the non-standard
+    Mongo DB port (27017) is not being used.
+    For example, when entering the hostname, you can define the port number
+    like so:
+
+        Syntax: hostname:port_number
+
+        Example: 'Enter Mongo DB Server Hostname: bigid-mongo:22314'
+    """
     print(tcolors.BOLD + "\n##### MONGO CONNECTION INFORMATION #####" +
           tcolors.ENDC)
-    mongo_server = input("\nEnter Mongodb Server Address: ")
+    mongo_server = input("\nEnter Mongo DB Server Hostname: ")
     mongo_user = input("Enter Mongodb User: ")
     mongo_pass = getpass.getpass("Enter Password for user '%s': "
                                  % mongo_user)
-    mongo_db = input("Enter the database name: ")
 
-    return mongo_server, mongo_user, mongo_pass, mongo_db
+    return mongo_server, mongo_user, mongo_pass
 
 
 def certVerify(cert_name):
-    """Verify the certificate path provided exists"""
+    """Verify the certificate path provided exists
+    """
     try:
         f = open(cert_name)
-        print(tcolors.GREEN + "\n" + cert_name + " found!\n" + tcolors.ENDC)
+        print(tcolors.GREEN + cert_name + " found!\n" + tcolors.ENDC)
         f.close
     except FileNotFoundError:
         print("\n" + cert_name + " not found! Please check your path.\n")
@@ -76,7 +83,7 @@ def main():
     # TODO: Consolidate and split code into more legible and reusable
     # functions. Add menu for "friendlier" interface
 
-    mongo_server, mongo_user, mongo_pass, mongo_db = mongoConn()
+    mongo_server, mongo_user, mongo_pass = mongoConn()
 
     # Check if SSL is being used with Mongo and, if so, ask if
     # client certificates are also being used to determine
@@ -121,10 +128,11 @@ def main():
     # Test the connection and confirm successful authentication
     try:
         if client.server_info():
-            print(tcolors.GREEN + "*** Authentication to Mongo Successul! ***"
-                  + tcolors.ENDC)
+            print(tcolors.GREEN + tcolors.BOLD + "*** Authentication to Mongo "
+                  "Successul! ***\n" + tcolors.ENDC)
     except OperationFailure:
-        print("Authentication failed\n")
+        print("Authentication failed! Please check that your username and "
+              "password combination is correct.\n")
         sys.exit()
     except ServerSelectionTimeoutError:
         print("Timeout Error. Connection closed.")
@@ -132,14 +140,21 @@ def main():
 
     # Create the connection to the user-defined Mongo DB and quit if
     # database is not found
-    print(tcolors.BOLD + "Trying to connect to '" + mongo_db + "'...")
-    dbcheck = client.list_database_names()
-    if mongo_db in dbcheck:
-        print("Successfully connected to '" + mongo_db + "'.\n")
-        db = client[mongo_db]
-    else:
-        print("Database '" + mongo_db + "' not found!\n")
-        sys.exit()
+    while True:
+        try:
+            mongo_db = input("Enter the database name: ")
+            dbcheck = client.list_database_names()
+            if mongo_db in dbcheck:
+                print(tcolors.GREEN + tcolors.BOLD + "Successfully connected "
+                      "to '" + mongo_db + "'!\n" + tcolors.ENDC)
+                db = client[mongo_db]
+                break
+            else:
+                print("Database '" + mongo_db + "' not found! "
+                      "Please enter a valid database.\n")
+                pass
+        except Exception:
+            print(Exception)
 
     # Define the collection and search parameters
     scans_collection = db["scans"]
@@ -157,6 +172,7 @@ def main():
     # to expand on the details shown.
     # Example of some keys that may be useful: info, origin,
     # pii_summary_completed_dt, identities_scanned, etc.
+
     counter = 0
     try:
         for scans in scans_collection.find({"name": scan_name}):
@@ -195,9 +211,11 @@ def main():
             while auth_rem == "y":
                 prim_id = input("Enter the _id of the scan to remove: ")
                 if len(prim_id) == 0:
-                    print("id cannot be blank!")
-                pass
-            print(tcolors.WARNING + "\nWARNING: THIS ACTION CANNOT BE UNDONE"
+                    print("id cannot be blank!\n")
+                    pass
+                else:
+                    break
+            print(tcolors.FAIL + "\nWARNING: THIS ACTION CANNOT BE UNDONE"
                   + tcolors.ENDC)
             confirm = input("\nAre you sure you want to remove "
                             "scan _id %s (y/n)? " % prim_id).lower()
