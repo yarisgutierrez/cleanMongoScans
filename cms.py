@@ -75,7 +75,7 @@ def certVerify(cert_name):
         print(tcolors.GREEN + cert_name + " found!\n" + tcolors.ENDC)
         f.close
     except FileNotFoundError:
-        print("\n" + cert_name + " not found! Please check your path.\n")
+        print(cert_name + " not found! Please check your path.\n")
         sys.exit()
 
 
@@ -160,7 +160,10 @@ def main():
     scans_collection = db["scans"]
     while True:
         scan_name = input("\nEnter Scan Profile Name (Case Sensitive): ")
-        if len(scan_name) == 0:
+        if scan_name not in scans_collection.find():
+            print("Scan Profile could not be found. Please try again.")
+            pass
+        elif len(scan_name) == 0:
             print("\nScan Profile Name cannot be blank.")
             pass
         else:
@@ -172,7 +175,6 @@ def main():
     # to expand on the details shown.
     # Example of some keys that may be useful: info, origin,
     # pii_summary_completed_dt, identities_scanned, etc.
-
     counter = 0
     try:
         for scans in scans_collection.find({"name": scan_name}):
