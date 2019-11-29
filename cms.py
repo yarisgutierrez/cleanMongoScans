@@ -160,14 +160,16 @@ def main():
     scans_collection = db["scans"]
     while True:
         scan_name = input("\nEnter Scan Profile Name (Case Sensitive): ")
-        if scan_name not in scans_collection.find():
-            print("Scan Profile could not be found. Please try again.")
-            pass
-        elif len(scan_name) == 0:
-            print("\nScan Profile Name cannot be blank.")
-            pass
-        else:
-            break
+        for scan in scans_collection.find({"name": scan_name}):
+            print(scan["name"])
+            if scan_name != scan["name"]:
+                print("Scan Profile could not be found. Please try again.")
+                pass
+            elif len(scan_name) == 0:
+                print("\nScan Profile Name cannot be blank.")
+                pass
+            else:
+                break
     scan_date = input("Enter date of scan (e.g. 2019-12-31): ")
 
     # Only print certain values from the returned dictionary in order to
