@@ -46,6 +46,11 @@ class tcolors:
     UNDERLINE = "\033[4m"
 
 
+print(tcolors.BOLD + "\n====================== "
+      "Clear BigID Scan =======================\n" + tcolors.ENDC)
+print("Press Ctl+c to quit at any time.")
+
+
 def mongoConn():
     """Define the Mongo connection details
     The mongo_server variable can hold a port number if the non-standard
@@ -57,9 +62,8 @@ def mongoConn():
 
         Example: 'Enter Mongo DB Server Hostname: bigid-mongo:22314'
     """
-    print(tcolors.BOLD + "\n##### MONGO CONNECTION INFORMATION #####" +
-          tcolors.ENDC)
-    mongo_server = input("\nEnter Mongo DB Server Hostname: ")
+    print(tcolors.BOLD + "\n[ MONGODB CONNECTION INFORMATION ]" + tcolors.ENDC)
+    mongo_server = input("Enter Mongo DB Server Hostname: ")
     mongo_user = input("Enter Mongodb User: ")
     mongo_pass = getpass.getpass("Enter Password for user '%s': "
                                  % mongo_user)
@@ -158,19 +162,20 @@ def main():
 
     # Define the collection and search parameters
     scans_collection = db["scans"]
+
     cont_loop = True
     while cont_loop:
-        scan_name = input("\nEnter Scan Profile Name (Case Sensitive): ")
+        scan_name = input("Enter Scan Profile Name (Case Sensitive): ")
         if len(scan_name) == 0:
             print("Scan Profile cannot be blank!\n")
             pass
         for scan in scans_collection.find({"name": scan_name}):
             if scan_name in scan["name"]:
-                print(tcolors.GREEN + "'" + scan_name + "' has been found.\n" + tcolors.ENDC)
+                print(tcolors.GREEN + "'" + scan_name + "' has been found.\n"
+                      + tcolors.ENDC)
                 cont_loop = False
                 break
-            elif scan not in scan["name"]:
-                print("%s was not found. Please enter a valide Scan Profile." % scan_name)
+            else:
                 pass
 
     scan_date = input("Enter date of scan (e.g. 2019-12-31): ")
