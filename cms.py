@@ -158,18 +158,21 @@ def main():
 
     # Define the collection and search parameters
     scans_collection = db["scans"]
-    while True:
+    cont_loop = True
+    while cont_loop:
         scan_name = input("\nEnter Scan Profile Name (Case Sensitive): ")
+        if len(scan_name) == 0:
+            print("Scan Profile cannot be blank!\n")
+            pass
         for scan in scans_collection.find({"name": scan_name}):
-            print(scan["name"])
-            if scan_name != scan["name"]:
-                print("Scan Profile could not be found. Please try again.")
-                pass
-            elif len(scan_name) == 0:
-                print("\nScan Profile Name cannot be blank.")
-                pass
-            else:
+            if scan_name in scan["name"]:
+                print(tcolors.GREEN + "'" + scan_name + "' has been found.\n" + tcolors.ENDC)
+                cont_loop = False
                 break
+            elif scan not in scan["name"]:
+                print("%s was not found. Please enter a valide Scan Profile." % scan_name)
+                pass
+
     scan_date = input("Enter date of scan (e.g. 2019-12-31): ")
 
     # Only print certain values from the returned dictionary in order to
