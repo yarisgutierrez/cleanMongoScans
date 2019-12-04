@@ -28,10 +28,6 @@ __copyright__ = "Copyright 2019, BigID"
 __email__ = "yarisg@bigid.com"
 __version__ = "0.1"
 
-# TODO: Add the ability to rename scans. Example: In-Progress => Complete, and
-# ensure that the script can be executed without the need to install Python
-# and other dependencies.
-
 
 class tcolors:
     """Define some colors to not make outputs look bland.
@@ -47,20 +43,14 @@ class tcolors:
 
 
 print(tcolors.BOLD + "\n====================== "
-      "Clear BigID Scan =======================\n" + tcolors.ENDC)
+      "Clean Up Residual Scanned Errors  =======================\n"
+      + tcolors.ENDC)
 print("Press Ctl+c to quit at any time.")
 
 
 def mongoConn():
     """Define the Mongo connection details
-    The mongo_server variable can hold a port number if the non-standard
-    Mongo DB port (27017) is not being used.
-    For example, when entering the hostname, you can define the port number
-    like so:
-
         Syntax: hostname:port_number
-
-        Example: 'Enter Mongo DB Server Hostname: bigid-mongo:22314'
     """
     print(tcolors.BOLD + "\n[ MONGODB CONNECTION INFORMATION ]" + tcolors.ENDC)
     mongo_server = input("Enter Mongo DB Server Hostname: ")
@@ -76,22 +66,16 @@ def certVerify(cert_name):
     """
     try:
         f = open(cert_name)
-        print(tcolors.GREEN + cert_name + " found!\n" + tcolors.ENDC)
+        print(tcolors.GREEN + cert_name + " found\n" + tcolors.ENDC)
         f.close
     except FileNotFoundError:
         print(cert_name + " not found! Please check your path.\n")
-        sys.exit()
 
 
 def main():
-    # TODO: Consolidate and split code into more legible and reusable
-    # functions. Add menu for "friendlier" interface
-
     mongo_server, mongo_user, mongo_pass = mongoConn()
 
-    # Check if SSL is being used with Mongo and, if so, ask if
-    # client certificates are also being used to determine
-    # the proper connection parameters
+    # Check if SSL is being used with Mongo
     mongo_ssl_check = input("\nIs Mongodb using SSL (y/n)? ").lower()
     if mongo_ssl_check == "y":
         mongo_client_cert = input("Are you using Client Certificates "
@@ -133,13 +117,13 @@ def main():
     try:
         if client.server_info():
             print(tcolors.GREEN + tcolors.BOLD + "*** Authentication to Mongo "
-                  "Successul! ***\n" + tcolors.ENDC)
+                  "Successul ***\n" + tcolors.ENDC)
     except OperationFailure:
         print("Authentication failed! Please check that your username and "
-              "password combination is correct.\n")
+              "password combination is correct\n")
         sys.exit()
     except ServerSelectionTimeoutError:
-        print("Timeout Error. Connection closed.")
+        print("Timeout Error. Connection closed")
         sys.exit()
 
     # Create the connection to the user-defined Mongo DB and quit if
@@ -150,28 +134,29 @@ def main():
             dbcheck = client.list_database_names()
             if mongo_db in dbcheck:
                 print(tcolors.GREEN + tcolors.BOLD + "Successfully connected "
-                      "to '" + mongo_db + "'!\n" + tcolors.ENDC)
+                      "to '" + mongo_db + "'\n" + tcolors.ENDC)
                 db = client[mongo_db]
                 break
             else:
-                print("Database '" + mongo_db + "' not found! "
+                print("Database '" + mongo_db + "' not found. "
                       "Please enter a valid database.\n")
                 pass
         except Exception:
             print(Exception)
 
-    # Define the collection and search parameters
+    # Define the collection to use
     scans_collection = db["scans"]
 
+    # Scan Profile Details
     cont_loop = True
     while cont_loop:
         scan_name = input("Enter Scan Profile Name (Case Sensitive): ")
         if len(scan_name) == 0:
-            print("Scan Profile cannot be blank!\n")
+            print("Scan Profile cannot be blank\n")
             pass
         for scan in scans_collection.find({"name": scan_name}):
             if scan_name in scan["name"]:
-                print(tcolors.GREEN + "'" + scan_name + "' has been found.\n"
+                print(tcolors.GREEN + "'" + scan_name + "' has been found\n"
                       + tcolors.ENDC)
                 cont_loop = False
                 break
@@ -180,11 +165,7 @@ def main():
 
     scan_date = input("Enter date of scan (e.g. 2019-12-31): ")
 
-    # Only print certain values from the returned dictionary in order to
-    # make the output more legible. Additional keys can be added if needed
-    # to expand on the details shown.
-    # Example of some keys that may be useful: info, origin,
-    # pii_summary_completed_dt, identities_scanned, etc.
+    # Only print certain values from the returned dict
     counter = 0
     try:
         for scans in scans_collection.find({"name": scan_name}):
@@ -236,8 +217,7 @@ def main():
                 for ids in scans_collection.find({"_id": ObjectId(prim_id)}):
                     scans_collection.delete_many({"_id": ObjectId(prim_id)})
 
-                # Delete sub-scans for above Primary Scan to remove any
-                # artifacts from the primary scan collection
+                # Delete sub-scans for above Primary Scan
                 for ids in scans_collection.find({"parent_scan_id": prim_id}):
                     scans_collection.delete_many({"parent_scan_id": prim_id})
 
