@@ -13,7 +13,7 @@ Requirements:
     - PyMongo (pip3 install pymongo)
 
 Usage:
-    ./cms.py
+    ./curse.py
 """
 import sys
 import getpass
@@ -30,7 +30,7 @@ __version__ = "0.1"
 
 
 class tcolors:
-    """Define some colors to not make outputs look bland.
+    """Define colors
     """
     HEADER = "\033[95m"
     BLUE = "\033[94m"
@@ -53,10 +53,19 @@ def mongoConn():
         Syntax: hostname:port_number
     """
     print(tcolors.BOLD + "\n[ MONGODB CONNECTION INFORMATION ]" + tcolors.ENDC)
-    mongo_server = input("Enter Mongo DB Server Hostname: ")
-    mongo_user = input("Enter Mongodb User: ")
-    mongo_pass = getpass.getpass("Enter Password for user '%s': "
+    mongo_server = input("Enter Mongo DB Server Hostname (Press Enter for "
+                         "default: bigid-mongo): ")
+    if len(mongo_server) == 0:
+        mongo_server = "bigid-mongo"
+        mongo_user = input("Enter Mongodb User (Press Enter for default: "
+                           "bigid): ")
+    if len(mongo_user) == 0:
+        mongo_user = "bigid"
+    mongo_pass = getpass.getpass("Enter Password for user '%s' (Press "
+                                 "Enter for default: password): "
                                  % mongo_user)
+    if len(mongo_pass) == 0:
+        mongo_pass = "password"
 
     return mongo_server, mongo_user, mongo_pass
 
