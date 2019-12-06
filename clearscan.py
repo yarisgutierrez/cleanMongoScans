@@ -55,7 +55,7 @@ def mongoConn():
     """
     print(tcolors.BOLD + "\n[ MONGODB CONNECTION INFORMATION ]" + tcolors.ENDC)
     mongo_server = input("Enter Mongo DB Server Hostname (Press Enter for "
-                         "default: bigid-mongo): ")
+                         "default: bigid-mongo:27017): ")
     if len(mongo_server) == 0:
         mongo_server = "bigid-mongo"
     mongo_user = input("Enter Mongodb User (Press Enter for default): ")
@@ -70,38 +70,31 @@ def mongoConn():
     return mongo_server, mongo_user, mongo_pass
 
 
+def certCheck(prompt):
+    while True:
+        cert_name = input(prompt)
+        if os.path.isfile(cert_name):
+            print(tcolors.GREEN + cert_name + " found\n" + tcolors.ENDC)
+            break
+        else:
+            print(cert_name + " not found! Please check that file exists.\n")
+            pass
+
+    return cert_name
+
+
 mongo_server, mongo_user, mongo_pass = mongoConn()
+
 # Check if SSL is being used with Mongo
 mongo_ssl_check = input("\nIs Mongodb using SSL (y/n)? ").lower()
 if mongo_ssl_check == "y":
     mongo_client_cert = input("Are you using Client Certificates "
                               "(y/n): ").lower()
     if mongo_ssl_check and mongo_client_cert == "y":
-        while True:
-            ssl_ca = input("Path to CA Certificate (e.g. /path/to/ca.pem): ")
-            if os.path.isfile(ssl_ca):
-                print(tcolors.GREEN + ssl_ca + " found\n" + tcolors.ENDC)
-                break
-            else:
-                print(ssl_ca + " not found! Please check your path.\n ")
-                pass
-        while True:
-            ssl_cert = input("Path to Client Certificate "
-                             "(e.g. /path/to/client.pem): ")
-            if os.path.isfile(ssl_cert):
-                print(tcolors.GREEN + ssl_cert + " found\n" + tcolors.ENDC)
-                break
-            else:
-                print(ssl_cert + " not found! Please check your path.\n ")
-                pass
-        while True:
-            ssl_key = input("Path to key (e.g. /path/to/client.key): ")
-            if os.path.isfile(ssl_key):
-                print(tcolors.GREEN + ssl_key + " found\n" + tcolors.ENDC)
-                break
-            else:
-                print(ssl_key + " not found! Please check your path.\n ")
-                pass
+        ssl_ca = certCheck("Path to CA Certificate (e.g. /path/to/ca.pem): ")
+        ssl_cert = certCheck("Path to Client Certificate (e.g. "
+                             "/path/to/client.pem): ")
+        ssl_key = certCheck("Path to Client Key (e.g. /path/to/clien.key): ")
         client = MongoClient(mongo_server,
                              username=mongo_user,
                              password=mongo_pass,
@@ -110,24 +103,17 @@ if mongo_ssl_check == "y":
                              ssl_certfile=ssl_cert,
                              ssl_keyfile=ssl_key,
                              authSource="admin")
-    # If client certificates are not being use but CA is, specify
-    # the CA certificate only to initiate the connection
+    # CA Only SSL Authentication
     elif mongo_ssl_check == "y":
-        while True:
-            ssl_ca = input("Path to CA Certificate (e.g. /path/to/ca.pem: ")
-            if os.path.isfile(ssl_ca):
-                print(tcolors.GREEN + ssl_ca + " found\n" + tcolors.ENDC)
-                break
-            else:
-                print(ssl_ca + " not found! Please check your path.\n ")
-                pass
+        ssl_ca = certCheck("Path to CA Certificate (e.g. "
+                           "/path/to/ca.pem): ")
         client = MongoClient(mongo_server,
                              username=mongo_user,
                              password=mongo_pass,
                              ssl=True,
                              ssl_ca_certs=ssl_ca,
                              authSource="admin")
-# If SSL is not being used, use the standard Mongo connection
+# No SSL
 else:
     client = MongoClient(mongo_server,
                          username=mongo_user,
@@ -147,11 +133,13 @@ except ServerSelectionTimeoutError:
     print("Timeout Error. Connection closed")
     sys.exit()
 
-# Create the connection to the user-defined Mongo DB and quit if
-# database is not found
+# Connect to a database
 while True:
     try:
-        mongo_db = input("Enter the database name: ")
+        mongo_db = input("Enter the database name (Press Enter for default"
+                         ": 'bigid-server'): ")
+        if len(mongo_db) == 0:
+            mongo_db = "bigid-server"
         dbcheck = client.list_database_names()
         if mongo_db in dbcheck:
             print(tcolors.GREEN + tcolors.BOLD + "Successfully connected "
@@ -211,7 +199,7 @@ try:
             if scans["state"] == "Completed":
                 if scans["scan_progress_status"]["Completed"]:
                     print(tcolors.BOLD + "Completed: " +
-                            tcolors.ENDC, end="")
+                          tcolors.ENDC, end="")
                     print(scans["scan_progress_status"]["Completed"])
             print("\n")
         elif len(scan_date) == 0:
@@ -237,11 +225,9 @@ if scan_date:
             # Delete Primary Scan
             for ids in scans_collection.find({"_id": ObjectId(prim_id)}):
                 scans_collection.delete_many({"_id": ObjectId(prim_id)})
-
             # Delete sub-scans for above Primary Scan
             for ids in scans_collection.find({"parent_scan_id": prim_id}):
                 scans_collection.delete_many({"parent_scan_id": prim_id})
-
             print("\n" + prim_id + " has been removed from the system")
         elif confirm == "n":
             sys.exit()
