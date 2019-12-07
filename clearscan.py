@@ -13,7 +13,7 @@ Requirements:
     - PyMongo (pip3 install pymongo)
 
 Usage:
-    ./curse.py
+    ./clearscan.py
 """
 import os
 import sys
