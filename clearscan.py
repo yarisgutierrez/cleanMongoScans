@@ -58,7 +58,7 @@ def mongoConn():
                          "default: bigid-mongo:27017): ")
     if len(mongo_server) == 0:
         mongo_server = "bigid-mongo"
-    mongo_user = input("Enter Mongodb User (Press Enter for default): ")
+    mongo_user = input("Enter Mongodb User (Press Enter for default: bigid): ")
     if len(mongo_user) == 0:
         mongo_user = "bigid"
     mongo_pass = getpass.getpass("Enter Password for user '%s' (Press "
