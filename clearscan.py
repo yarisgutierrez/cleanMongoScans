@@ -221,13 +221,29 @@ def rem_singleScan():
         if auth_rem == "y":
             while auth_rem == "y":
                 prim_id = input("Enter the _id of the scan to remove: ")
+                for corr_scan in scans_collection.find({"parent_scan_id": prim_id,
+                                                       "type":
+                                                        "correlation_scan"}):
+                    print(tcolors.BOLD + "\nCorrelation Scan ID: " +
+                          tcolors.ENDC, end="")
+                    print(corr_scan["scanId"])
+                    print(tcolors.BOLD + "Correlation Scan State: " +
+                          tcolors.ENDC, end="")
+                    print(corr_scan["state"])
                 if len(prim_id) == 0:
                     print("id cannot be blank!\n")
                     pass
+                elif corr_scan["state"] != "Completed":
+                    print(tcolors.FAIL + tcolors.BOLD +
+                          "\nCorrelation for this scan has not completed! "
+                          "Please wait for correlation to complete before "
+                          "removing any scans. "
+                          "Exiting." + tcolors.ENDC)
+                    sys.exit()
                 else:
                     break
             print(tcolors.FAIL + "\nWARNING: THIS ACTION CANNOT BE UNDONE"
-                + tcolors.ENDC)
+                  + tcolors.ENDC)
             confirm = input("\nAre you sure you want to remove "
                             "scan _id %s (y/n)? " % prim_id).lower()
             if confirm == "y":
@@ -237,7 +253,7 @@ def rem_singleScan():
                 # Delete sub-scans for above Primary Scan
                 for ids in scans_collection.find({"parent_scan_id": prim_id}):
                     scans_collection.delete_many({"parent_scan_id": prim_id})
-                print("\n" + prim_id + " has been removed from the system")
+                print("\n" + prim_id + " has been removed from the system\n")
             elif confirm == "n":
                 main()
         elif auth_rem == "n":
