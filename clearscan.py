@@ -98,33 +98,33 @@ def mongo_conn():
             ssl_ca = cert_check("Path to CA Certificate (e.g. "
                                 "/path/to/ca.pem): ")
             ssl_cert = cert_check("Path to Client Certificate (e.g. "
-                                 "/path/to/client.pem): ")
+                                  "/path/to/client.pem): ")
             ssl_key = cert_check("Path to Client Key (e.g. "
                                  "/path/to/clien.key): ")
             client = MongoClient(mongo_server,
-                                username=mongo_user,
-                                password=mongo_pass,
-                                ssl=True,
-                                ssl_ca_certs=ssl_ca,
-                                ssl_certfile=ssl_cert,
-                                ssl_keyfile=ssl_key,
-                                authSource=mongo_authsource)
+                                 username=mongo_user,
+                                 password=mongo_pass,
+                                 ssl=True,
+                                 ssl_ca_certs=ssl_ca,
+                                 ssl_certfile=ssl_cert,
+                                 ssl_keyfile=ssl_key,
+                                 authSource=mongo_authsource)
         # CA Only SSL Authentication
         elif mongo_ssl_check == "y":
             ssl_ca = certCheck("Path to CA Certificate (e.g. "
-                            "/path/to/ca.pem): ")
+                               "/path/to/ca.pem): ")
             client = MongoClient(mongo_server,
-                                username=mongo_user,
-                                password=mongo_pass,
-                                ssl=True,
-                                ssl_ca_certs=ssl_ca,
-                                authSource=mongo_authsource)
+                                 username=mongo_user,
+                                 password=mongo_pass,
+                                 ssl=True,
+                                 ssl_ca_certs=ssl_ca,
+                                 authSource=mongo_authsource)
     # No SSL
     else:
         client = MongoClient(mongo_server,
-                            username=mongo_user,
-                            password=mongo_pass,
-                            authSource=mongo_authsource)
+                             username=mongo_user,
+                             password=mongo_pass,
+                             authSource=mongo_authsource)
 
     # Test the connection and confirm successful authentication
     try:
@@ -175,7 +175,7 @@ def rem_singleScan():
         for scan in scans_collection.find({"name": scan_name}):
             if scan_name in scan["name"]:
                 print(tcolors.GREEN + "'" + scan_name + "' has been found\n"
-                    + tcolors.ENDC)
+                      + tcolors.ENDC)
                 cont_loop = False
                 break
             else:
@@ -291,5 +291,5 @@ def main():
     print(67 * "-")
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
     sys.exit(main())
