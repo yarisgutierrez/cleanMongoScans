@@ -211,7 +211,7 @@ def rem_singleScan():
                               tcolors.ENDC, end="")
                         print(scans["scan_progress_status"]["Completed"])
                 print("\n")
-            elif len(scan_date) == 0:
+            elif scan_date is None:
                 raise ValueError
     except ValueError:
         print("\nA scan date is required!\n")
@@ -285,9 +285,13 @@ def main():
             rem_singleScan()
             continue
         elif ask == 2:
+            print("This option is not currently available")
             sys.exit()
         elif ask == 3:
             sys.exit()
+        elif ask != 1 or ask != 2 or ask != 3 or len(ask) == 0:
+            print("\nYou need to enter a valid choice\n")
+            pass
     print(67 * "-")
 
 
